@@ -22,6 +22,7 @@ program
   .option('-k, --key <key>',        'aws key access id')
   .option('-s, --secret <secret>',  'aws secret access key')
   .option('-b, --bucket <name>',    'bucket name')
+  .option('-q, --quiet',            'quiet mode')
   .parse(process.argv);
 
 /* ensure required parameters */
@@ -45,6 +46,8 @@ files = files.filter(function(f){
   return !fs.statSync(f).isDirectory();
 });
 
+var quiet = (program.quiet) ? true : false;
+
 /* setup progress bar */
 var bar = new ProgressBar('  uploading [:bar] :percent :etas', {
     complete: '='
@@ -58,7 +61,7 @@ var tasks = files.map(function(f){
   return function(cb){
     s3.putFile(f, '/'+f, function(err, res){
       if (res.statusCode!==200) console.log(res.statusCode,f);  
-      bar.tick();
+      if (!quiet) bar.tick();
       cb();
     });
   }
