@@ -7,17 +7,46 @@
 var program = require('commander')
   , pkg     = require('../package.json')
   , version = pkg.version
-  , _       = require('underscore')
   , async   = require('async')
+  , knox    = require('knox') 
+  , wrench  = require('wrench')
+  , fs      = require('fs')
   ;
 
-// CLI
+/* CLI */
 
 program
   .version(version)
-  .option('-k, --awsAccessKeyId',       'aws key access id')
-  .option('-s, --awsSecretAccessKey',   'aws secret access key')
-  .option('-b, --bucketName',           'bucket name')
+  .option('-k, --key <key>',        'aws key access id')
+  .option('-s, --secret <secret>',  'aws secret access key')
+  .option('-b, --bucket <name>',    'bucket name')
   .parse(process.argv);
 
-console.log('program',program);
+/* ensure required parameters */
+if (!program.key) throw new Error('--key required');
+if (!program.secret) throw new Error('--secret required');
+if (!program.bucket) throw new Error('--bucket required');
+
+/* s3 is our client to the specified bucket */ 
+var s3 = knox.createClient({
+    key:program.key
+  , secret:program.secret
+  , bucket:program.bucket
+});
+
+/* get all files and directory */ 
+var files = wrench.readdirSyncRecursive('.');
+/* remove directories */
+files = files.filter(function(f){ 
+  return !fs.statSync(f).isDirectory();
+});
+/* upload files */
+files.forEach(function(f){
+  s3.putFile(f, '/'+f, function(err, res){
+    console.log(res.statusCode,f);  
+  });
+});
+
+process.on('exit', function(){
+  console.log('\n  bye');
+});
