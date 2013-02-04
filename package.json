@@ -1,6 +1,6 @@
 {
   "name": "s3front",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Command-line tool to upload a directory to an AWS S3 bucket and optionally invalidate the associated AWS CloudFront distribution.",
   "main": "./bin/s3front",
   "scripts": {
@@ -17,6 +17,8 @@
     "command-line",
     "cli"
   ],
+  "bin" :
+    { "s3front" : "bin/s3front" },
   "author": "Jon Maim",
   "license": "BSD",
   "dependencies": {
