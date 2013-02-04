@@ -17,5 +17,10 @@
     "command-line"
   ],
   "author": "Jon Maim",
-  "license": "BSD"
+  "license": "BSD",
+  "dependencies": {
+    "async": "~0.1.22",
+    "underscore": "~1.4.4",
+    "commander": "~1.1.1"
+  }
 }

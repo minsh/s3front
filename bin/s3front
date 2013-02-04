@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var program = require('commander')
+  , pkg     = require('../package.json')
+  , version = pkg.version
+  , _       = require('underscore')
+  , async   = require('async')
+  ;
+
+// CLI
+
+program
+  .version(version)
+  .option('-k, --awsAccessKeyId',       'aws key access id')
+  .option('-s, --awsSecretAccessKey',   'aws secret access key')
+  .option('-b, --bucketName',           'bucket name')
+  .parse(process.argv);
+
+console.log('program',program);
