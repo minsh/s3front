@@ -68,7 +68,7 @@ while(true){
   for (var j=i; j < i+batchSize && i < l; ++j, ++i){
     innerTasks.push(function(cb){
       var f = files[cnt++];
-      s3.putFile(f, '/'+f, function(err, res){
+      s3.putFile(f, '/'+f, { 'x-amz-acl': 'public-read' }, function(err, res){
         if (res.statusCode!==200) console.log(res.statusCode,f);
         if (!quiet) bar.tick();
         cb();
