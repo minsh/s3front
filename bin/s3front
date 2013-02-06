@@ -7,10 +7,10 @@
 var program     = require('commander')
   , pkg         = require('../package.json')
   , version     = pkg.version
-  , knox        = require('knox') 
+  , knox        = require('knox')
   , wrench      = require('wrench')
   , fs          = require('fs')
-  , ProgressBar = require('progress') 
+  , ProgressBar = require('progress')
   , async       = require('async')
   ;
 
@@ -31,43 +31,56 @@ if (!program.bucket) throw new Error('--bucket required');
 
 console.log('\n');
 
-/* s3 is our client to the specified bucket */ 
+/* s3 is our client to the specified bucket */
 var s3 = knox.createClient({
     key:program.key
   , secret:program.secret
   , bucket:program.bucket
 });
 
-/* get all files and directory */ 
+/* get all files and directory */
 var files = wrench.readdirSyncRecursive('.');
 /* remove directories */
-files = files.filter(function(f){ 
+files = files.filter(function(f){
   return !fs.statSync(f).isDirectory();
 });
 
 var quiet = (program.quiet) ? true : false;
+
+var l = files.length;
 
 /* setup progress bar */
 var bar = new ProgressBar('  uploading [:bar] :percent :etas', {
     complete: '='
   , incomplete: ' '
   , width: 80
-  , total: files.length
+  , total: l
 });
 
-/* upload files */
-var tasks = files.map(function(f){
-  return function(cb){
-    s3.putFile(f, '/'+f, function(err, res){
-      if (res.statusCode!==200) console.log(res.statusCode,f);  
-      if (!quiet) bar.tick();
-      cb();
+/* upload files by batch */
+var batchSize = 10
+  , tasks = []
+  , cnt = 0
+  , i = 0
+  ;
+while(true){
+  var innerTasks = [];
+  for (var j=i; j < i+batchSize && i < l; ++j, ++i){
+    innerTasks.push(function(cb){
+      var f = files[cnt++];
+      s3.putFile(f, '/'+f, function(err, res){
+        if (res.statusCode!==200) console.log(res.statusCode,f);
+        if (!quiet) bar.tick();
+        cb();
+      });
     });
   }
-});
-async.parallel(tasks, function(){
-  process.exit();
-});
+  tasks.push(function(cb){
+    async.parallel(innerTasks, function(){ cb() });
+  });
+  if (i>=l) break;
+}
+async.series(tasks, function(){ process.exit() });
 
 process.on('exit', function(){
   console.log('\n');
