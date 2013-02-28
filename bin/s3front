@@ -69,6 +69,7 @@ while(true){
     innerTasks.push(function(cb){
       var f = files[cnt++];
       s3.putFile(f, '/'+f, { 'x-amz-acl': 'public-read' }, function(err, res){
+        if (err) return cb(err);
         if (res.statusCode!==200) console.log(res.statusCode,f);
         if (!quiet) bar.tick();
         cb();
@@ -76,11 +77,16 @@ while(true){
     });
   }
   tasks.push(function(cb){
-    async.parallel(innerTasks, function(){ cb() });
+    async.parallel(innerTasks, function(err){
+      cb(err);
+    });
   });
   if (i>=l) break;
 }
-async.series(tasks, function(){ process.exit() });
+async.series(tasks, function(err){
+  if (err) console.log('err',err);
+  process.exit();
+});
 
 process.on('exit', function(){
   console.log('\n');

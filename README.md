@@ -14,7 +14,9 @@ npm install s3front -g
 cp website;
 s3front -k xxx -s xxx -b bucket_name; 
 ```
+#LICENSE
 
+MIT
 
 # TODO
 Cloudfront invalidation
