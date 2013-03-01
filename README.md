@@ -1,6 +1,6 @@
 S3Front
 =======
-Command-line tool to upload a directory to an AWS S3 bucket and optionally invalidate the associated AWS CloudFront distribution.
+Fast command-line tool to upload a directory to an AWS S3 bucket and optionally invalidate the associated AWS CloudFront distribution.
 
 By default all uploaded files will be public.
 
