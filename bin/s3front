@@ -14,6 +14,7 @@ var program     = require('commander')
   , ProgressBar = require('progress')
   , async       = require('async')
   , cloudfront  = require('cloudfront')
+  , uuid        = require('node-uuid')
   ;
 
 /* CLI */
@@ -108,9 +109,9 @@ async.series(tasks, function(err){
       });
       /* invalidate content if distribution has been found */
       if (distributionId) {
-        cf.createInvalidation(distributionId, undefined, '/.', function(err, invalidation){
+        cf.createInvalidation(distributionId, uuid.v4(), '/.', function(err, invalidation){
           if (err) inspect(err)
-          inspect(invalidation);
+          console.log('\n\ninvalidation status:',invalidation.status);
           process.exit();
         });
       }
