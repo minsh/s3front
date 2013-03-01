@@ -10,8 +10,10 @@ var program     = require('commander')
   , knox        = require('knox')
   , wrench      = require('wrench')
   , fs          = require('fs')
+  , inspect     = require('eyes').inspector({maxLength: -1})
   , ProgressBar = require('progress')
   , async       = require('async')
+  , cloudfront  = require('cloudfront')
   ;
 
 /* CLI */
@@ -22,6 +24,7 @@ program
   .option('-s, --secret <secret>',  'aws secret access key')
   .option('-b, --bucket <name>',    'bucket name')
   .option('-q, --quiet',            'quiet mode')
+  .option('-i, --invalidate',       'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
   .parse(process.argv);
 
 /* ensure required parameters */
@@ -84,8 +87,37 @@ while(true){
   if (i>=l) break;
 }
 async.series(tasks, function(err){
-  if (err) console.log('err',err);
-  process.exit();
+  if (err) {
+    inspect(err);
+    process.exit();
+  }
+
+  /* cloudfront invalidation */
+  if (program.invalidate){
+    var cf = cloudfront.createClient(program.key, program.secret);
+    cf.listDistributions(function(err, list, info) {
+      var distributionId = null;
+      /* find first distribution id which has an alias similar to bucket name. */
+      list.some(function(d){
+        return d.config.aliases.some(function(a){
+          if (a === program.bucket) {
+            distributionId = d.id;
+            return true;
+          }
+        });
+      });
+      /* invalidate content if distribution has been found */
+      if (distributionId) {
+        cf.createInvalidation(distributionId, undefined, '/.', function(err, invalidation){
+          if (err) inspect(err)
+          inspect(invalidation);
+          process.exit();
+        });
+      }
+    });
+  } else {
+    process.exit();
+  }
 });
 
 process.on('exit', function(){
