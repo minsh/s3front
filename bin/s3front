@@ -35,8 +35,8 @@ if (!program.bucket) throw new Error('--bucket required');
 console.log('\n');
 
 var s3 = knox.createClient({
-  key:program.key, 
-  secret:program.secret, 
+  key:program.key,
+  secret:program.secret,
   bucket:program.bucket
 });
 
@@ -47,7 +47,7 @@ files = files.filter(function(f){
   return !fs.statSync(f).isDirectory();
 });
 var nbFiles = files.length;
-    
+
 var quiet = (program.quiet) ? true : false;
 
 /* setup progress bar */
@@ -59,27 +59,31 @@ var bar = new ProgressBar('  uploading [:bar] :percent :etas', {
 });
 
 /* upload files by batch */
-var batchSize = 10
-  , cnt = 0
-  , tasks = []
-  ;
+var batchSize = 10,
+  cnt = 0,
+  uploadCnt = 0,
+  tasks = [];
 
+if (!program.quiet) { console.log('# files',files.length); }
+
+var testCnt = 0;
 _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
   tasks.push(function(cb){
     var uploads = [];
-    while (cnt < idx*batchSize && cnt < nbFiles){
-      var file = files[cnt++];
+    for ( ; cnt < (idx+1)*batchSize && cnt < nbFiles; ++cnt){
       uploads.push(function(cb){
+        var file = files[uploadCnt++];
         s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
           if (err) { return cb(err); }
-          if (res.statusCode !== 200) { console.log(res.statusCode,f); }
+          if (res.statusCode !== 200) { console.log(res.statusCode); }
           if (!quiet) { bar.tick(); }
-          cb();
+          if (!program.quiet) { console.log(testCnt++,file); }
+          return cb();
         });
       });
-    } 
-    async.parallel(uploads, function(err){ cb(err); }); 
-  });   
+    }
+    async.parallel(uploads, function(err){ cb(err); });
+  });
 });
 
 async.series(tasks, function(err){
