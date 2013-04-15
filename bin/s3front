@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
+/* module dependencies */
 
 var program     = require('commander')
   , pkg         = require('../package.json')
@@ -15,6 +13,7 @@ var program     = require('commander')
   , async       = require('async')
   , cloudfront  = require('cloudfront')
   , uuid        = require('node-uuid')
+  , _           = require('underscore')
   ;
 
 /* CLI */
@@ -35,11 +34,10 @@ if (!program.bucket) throw new Error('--bucket required');
 
 console.log('\n');
 
-/* s3 is our client to the specified bucket */
 var s3 = knox.createClient({
-    key:program.key
-  , secret:program.secret
-  , bucket:program.bucket
+  key:program.key, 
+  secret:program.secret, 
+  bucket:program.bucket
 });
 
 /* get all files and directory */
@@ -48,45 +46,42 @@ var files = wrench.readdirSyncRecursive('.');
 files = files.filter(function(f){
   return !fs.statSync(f).isDirectory();
 });
-
+var nbFiles = files.length;
+    
 var quiet = (program.quiet) ? true : false;
-
-var l = files.length;
 
 /* setup progress bar */
 var bar = new ProgressBar('  uploading [:bar] :percent :etas', {
     complete: '='
   , incomplete: ' '
   , width: 80
-  , total: l
+  , total: nbFiles
 });
 
 /* upload files by batch */
 var batchSize = 10
-  , tasks = []
   , cnt = 0
-  , i = 0
+  , tasks = []
   ;
-while(true){
-  var innerTasks = [];
-  for (var j=i; j < i+batchSize && i < l; ++j, ++i){
-    innerTasks.push(function(cb){
-      var f = files[cnt++];
-      s3.putFile(f, '/'+f, { 'x-amz-acl': 'public-read' }, function(err, res){
-        if (err) return cb(err);
-        if (res.statusCode!==200) console.log(res.statusCode,f);
-        if (!quiet) bar.tick();
-        cb();
-      });
-    });
-  }
+
+_.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
   tasks.push(function(cb){
-    async.parallel(innerTasks, function(err){
-      cb(err);
-    });
-  });
-  if (i>=l) break;
-}
+    var uploads = [];
+    while (cnt < idx*batchSize && cnt < nbFiles){
+      var file = files[cnt++];
+      uploads.push(function(cb){
+        s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
+          if (err) { return cb(err); }
+          if (res.statusCode !== 200) { console.log(res.statusCode,f); }
+          if (!quiet) { bar.tick(); }
+          cb();
+        });
+      });
+    } 
+    async.parallel(uploads, function(err){ cb(err); }); 
+  });   
+});
+
 async.series(tasks, function(err){
   if (err) {
     inspect(err);
@@ -111,7 +106,7 @@ async.series(tasks, function(err){
       if (distributionId) {
         cf.createInvalidation(distributionId, uuid.v4(), '/.', function(err, invalidation){
           if (err) inspect(err)
-          console.log('\n\ninvalidation status:',invalidation.status);
+          console.log('\n\n  invalidation status:',invalidation.status);
           process.exit();
         });
       }

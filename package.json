@@ -23,13 +23,13 @@
   "author": "Jon Maim",
   "license": "BSD",
   "dependencies": {
-    "async": "~0.1.22",
-    "commander": "~1.1.1",
-    "knox": "~0.5.0",
-    "wrench": "~1.4.4",
-    "progress": "~0.1.0",
-    "cloudfront": "~0.3.1",
-    "eyes": "~0.1.8",
-    "node-uuid": "~1.4.0"
+    "async": "0.1.22",
+    "commander": "1.1.1",
+    "knox": "~0.7.0",
+    "wrench": "1.4.4",
+    "progress": "0.1.0",
+    "cloudfront": "0.3.1",
+    "eyes": "0.1.8",
+    "node-uuid": "1.4.0"
   }
 }
