@@ -77,7 +77,7 @@ _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
         var file = files[uploadCnt++];
         cache.is(file, function(there) {
           if (there) { 
-            bar.tick();
+            if (!quiet) { bar.tick(); }
             return cb(); 
           }
           s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
