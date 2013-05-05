@@ -2,19 +2,19 @@
 
 /* module dependencies */
 
-var program     = require('commander')
-  , pkg         = require('../package.json')
-  , version     = pkg.version
-  , knox        = require('knox')
-  , wrench      = require('wrench')
-  , fs          = require('fs')
-  , inspect     = require('eyes').inspector({maxLength: -1})
-  , ProgressBar = require('progress')
-  , async       = require('async')
-  , cloudfront  = require('cloudfront')
-  , uuid        = require('node-uuid')
-  , _           = require('underscore')
-  ;
+var program     = require('commander'), 
+    pkg         = require('../package.json'),
+    version     = pkg.version, 
+    knox        = require('knox'), 
+    wrench      = require('wrench'), 
+    fs          = require('fs-extra'), 
+    inspect     = require('eyes').inspector({maxLength: -1}), 
+    ProgressBar = require('progress'), 
+    async       = require('async'), 
+    cloudfront  = require('cloudfront'), 
+    uuid        = require('node-uuid'), 
+    _           = require('underscore'),
+    cache       = require('../lib/cache');
 
 /* CLI */
 
@@ -33,6 +33,8 @@ if (!program.secret) throw new Error('--secret required');
 if (!program.bucket) throw new Error('--bucket required');
 
 console.log('\n');
+
+cache.init(program.bucket);
 
 var s3 = knox.createClient({
   key:program.key,
@@ -64,7 +66,7 @@ var batchSize = 10,
   uploadCnt = 0,
   tasks = [];
 
-if (!program.quiet) { console.log('# files',files.length); }
+//if (!program.quiet) { console.log('# files',files.length); }
 
 var testCnt = 0;
 _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
@@ -73,12 +75,21 @@ _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
     for ( ; cnt < (idx+1)*batchSize && cnt < nbFiles; ++cnt){
       uploads.push(function(cb){
         var file = files[uploadCnt++];
-        s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
-          if (err) { return cb(err); }
-          if (res.statusCode !== 200) { console.log(res.statusCode); }
-          if (!quiet) { bar.tick(); }
-          if (!program.quiet) { console.log(testCnt++,file); }
-          return cb();
+        cache.is(file, function(there) {
+          if (there) { 
+            bar.tick();
+            return cb(); 
+          }
+          s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
+            if (err) { return cb(err); }
+            if (res.statusCode !== 200) { console.log(res.statusCode); }
+            if (!quiet) { bar.tick(); }
+            //if (!program.quiet) { console.log(testCnt++,file); }
+
+            /* tell the cache */
+            cache.uploaded(file);
+            return cb();
+          });
         });
       });
     }
