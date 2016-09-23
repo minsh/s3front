@@ -84,7 +84,7 @@ _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx){
           }
           s3.putFile(file, '/'+file, { 'x-amz-acl': 'public-read' }, function(err, res){
             if (err) { return cb(err); }
-            if (res.statusCode !== 200) { console.log(res.statusCode); }
+            if (res.statusCode !== 200) { console.log(res.statusCode, res.statusMessage, res.url); }
             if (!quiet) { bar.tick(); }
             //if (!program.quiet) { console.log(testCnt++,file); }
 
