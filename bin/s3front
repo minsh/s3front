@@ -38,13 +38,14 @@ console.log('\n');
 
 cache.init(program.bucket);
 
+program.region = program.region || 'us-east-1';
+
 /* use newest sdk to avoid: https://github.com/andrewrk/node-s3-client/issues/69 */
 var awsS3Client = new AWS.S3({
   accessKeyId: program.key,
   secretAccessKey: program.secret,
-  region: (program.region) ? program.region : 'us-standard',
-  s3BucketEndpoint: true,
-  endpoint: 'http://' + program.bucket + '.s3.amazonaws.com'
+  region: program.region,
+  signatureVersion: program.region === 'us-east-1' ? 'v2' : 'v4'
 });
 
 var s3Client = s3.createClient({s3Client: awsS3Client});
