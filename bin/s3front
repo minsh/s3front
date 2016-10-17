@@ -27,6 +27,7 @@ program
   .option('-q, --quiet',            'quiet mode')
   .option('-r, --region <name>',    'region if not in US standard')
   .option('-i, --invalidate',       'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
+  .option('-c, --cloudfront <cloudfront id>', 'cloudfront id (optional)')
   .parse(process.argv);
 
 if (!process.argv.slice(2).length) {
@@ -117,16 +118,20 @@ async.series(tasks, function(err){
   if (program.invalidate){
     var cf = cloudfront.createClient(program.key, program.secret);
     cf.listDistributions(function(err, list, info) {
-      var distributionId = null;
+      var distributionId = program.cloudfront || null;
+
       /* find first distribution id which has an alias similar to bucket name. */
-      list.some(function(d){
-        return d.config.aliases.some(function(a){
-          if (a === program.bucket) {
-            distributionId = d.id;
-            return true;
-          }
+      if (!program.cloudfront) {
+        list.some(function(d){
+          return d.config.aliases.some(function(a){
+            if (a === program.bucket) {
+              distributionId = d.id;
+              return true;
+            }
+          });
         });
-      });
+      }
+
       /* invalidate content if distribution has been found */
       if (distributionId) {
         cf.createInvalidation(distributionId, uuid.v4(), '/.', function(err, invalidation){
@@ -134,6 +139,9 @@ async.series(tasks, function(err){
           console.log('\n\n  invalidation status:',invalidation.status);
           process.exit();
         });
+      } else {
+        console.log('Couldnt find cloudfront distribution id, you can manually add it with -c');
+        process.exit();
       }
     });
   } else {
