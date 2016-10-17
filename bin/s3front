@@ -29,6 +29,11 @@ program
   .option('-i, --invalidate',       'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
   .parse(process.argv);
 
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+  process.exit();
+}
+
 /* ensure required parameters */
 if (!program.key) throw new Error('--key required');
 if (!program.secret) throw new Error('--secret required');
@@ -75,9 +80,9 @@ _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx) {
       uploads.push(function(cb){
         var file = files[uploadCnt++];
         cache.is(file, function(there) {
-          if (there) { 
+          if (there) {
             if (!quiet) { bar.tick(); }
-            return cb(); 
+            return cb();
           }
 
           var params = {
