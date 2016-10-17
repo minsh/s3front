@@ -28,6 +28,7 @@ program
   .option('-r, --region <name>',    'region if not in US standard')
   .option('-i, --invalidate',       'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
   .option('-c, --cloudfront <cloudfront id>', 'cloudfront id (optional)')
+  .option('-p, --path <path>', 'change default path of localfiles')
   .parse(process.argv);
 
 if (!process.argv.slice(2).length) {
@@ -39,6 +40,10 @@ if (!process.argv.slice(2).length) {
 if (!program.key) throw new Error('--key required');
 if (!program.secret) throw new Error('--secret required');
 if (!program.bucket) throw new Error('--bucket required');
+
+if (program.path) {
+  process.chdir(program.path);
+}
 
 console.log('\n');
 
