@@ -13,7 +13,7 @@ var inspect = require('eyes').inspector({maxLength: -1});
 var ProgressBar = require('progress');
 var async = require('async');
 var cloudfront = require('cloudfront');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var _ = require('underscore');
 var cache = require('../lib/cache');
 
