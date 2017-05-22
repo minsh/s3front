@@ -21,12 +21,13 @@ var cache = require('../lib/cache');
 
 program
   .version(version)
-  .option('-k, --key <key>',        'aws key access id')
-  .option('-s, --secret <secret>',  'aws secret access key')
-  .option('-b, --bucket <name>',    'bucket name')
-  .option('-q, --quiet',            'quiet mode')
-  .option('-r, --region <name>',    'region if not in US standard')
-  .option('-i, --invalidate',       'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
+  .option('-k, --key <key>',                  'aws key access id')
+  .option('-s, --secret <secret>',            'aws secret access key')
+  .option('-b, --bucket <name>',              'bucket name')
+  .option('-q, --quiet',                      'quiet mode')
+  .option('-r, --region <name>',              'region if not in US standard')
+  .option('-c, --cachecontrol <stringvalue>', 'cache control aws putObject param')
+  .option('-i, --invalidate',                 'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
   .parse(process.argv);
 
 /* ensure required parameters */
@@ -88,6 +89,9 @@ _.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx) {
               ACL: 'public-read'
             },
           };
+          if (program.cachecontrol) {
+            params.s3Params['CacheControl'] = program.cachecontrol;
+          }
           var uploader = s3Client.uploadFile(params);
           uploader.on('error', cb);
           uploader.on('end', function() {
