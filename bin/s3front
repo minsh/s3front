@@ -64,54 +64,37 @@ var bar = new ProgressBar('  uploading [:bar] :percent :etas', {complete: '=', i
 
 /* upload files by batch */
 var batchSize = 10;
-var cnt = 0;
-var uploadCnt = 0;
-var tasks = [];
 
-var testCnt = 0;
-_.range(Math.ceil(nbFiles / batchSize)).forEach(function(idx) {
-  tasks.push(function(cb) {
-    var uploads = [];
-    for ( ; cnt < (idx + 1) * batchSize && cnt < nbFiles; ++cnt){
-      uploads.push(function(cb){
-        var file = files[uploadCnt++];
-        cache.is(file, function(there) {
-          if (there) { 
-            if (!quiet) { bar.tick(); }
-            return cb(); 
-          }
-
-          var params = {
-            localFile: file,
-            s3Params: {
-              Bucket: program.bucket,
-              Key: file,
-              ACL: 'public-read'
-            },
-          };
-          if (program.cachecontrol) {
-            params.s3Params['CacheControl'] = program.cachecontrol;
-          }
-          var uploader = s3Client.uploadFile(params);
-          uploader.on('error', cb);
-          uploader.on('end', function() {
-            cache.uploaded(file);
-            if (!quiet) { bar.tick(); }
-            return cb();
-          });
-        });
-      });
+var q = async.queue(function(file, cb) {
+  cache.is(file, function(there) {
+    if (there) { 
+      if (!quiet) { bar.tick(); }
+      return cb(); 
     }
-    async.parallel(uploads, function(err){ cb(err); });
+
+    var params = {
+      localFile: file,
+      s3Params: {
+        Bucket: program.bucket,
+        Key: file,
+        ACL: 'public-read'
+      },
+    };
+    if (program.cachecontrol) { params.s3Params['CacheControl'] = program.cachecontrol; }
+
+    var uploader = s3Client.uploadFile(params);
+
+    uploader.on('error', cb);
+    uploader.on('end', function() {
+      cache.uploaded(file);
+      if (!quiet) { bar.tick(); }
+
+      return cb(null);
+    });
   });
-});
+}, 10 /* concurrency */);
 
-async.series(tasks, function(err){
-  if (err) {
-    inspect(err);
-    process.exit();
-  }
-
+q.drain = function() {
   /* cloudfront invalidation */
   if (program.invalidate){
     var cf = cloudfront.createClient(program.key, program.secret);
@@ -138,6 +121,15 @@ async.series(tasks, function(err){
   } else {
     process.exit();
   }
+};
+
+files.forEach(function(file) {
+  q.push(file, function(err) {
+    if (err) {
+      inspect(err);
+      process.exit();
+    }
+  });  
 });
 
 process.on('exit', function() { console.log('\n'); });

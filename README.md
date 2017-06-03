@@ -13,21 +13,23 @@ npm install s3front -g
 
   Options:
 
-    -h, --help             output usage information
-    -V, --version          output the version number
-    -k, --key <key>        aws key access id
-    -s, --secret <secret>  aws secret access key
-    -b, --bucket <name>    bucket name
-    -q, --quiet            quiet mode
-    -i, --invalidate       after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content
+    -h, --help                         output usage information
+    -V, --version                      output the version number
+    -k, --key <key>                    aws key access id
+    -s, --secret <secret>              aws secret access key
+    -b, --bucket <name>                bucket name
+    -q, --quiet                        quiet mode
+    -r, --region <name>                region if not in US standard
+    -c, --cachecontrol <stringvalue>   cache control aws putObject param
+    -i, --invalidate                   after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content
 ```
 
-# Example
+ Example
 The content of `website_dir` will be uploaded to the S3 bucket named `website`.
 If the upload is successful and a distribution containing an alias `website` is found, the whole distribution will be invalidated.
 ```
 cd website_dir;
-s3front -k xxx -s xxx -b website -l;
+s3front -k xxx -s xxx -b website;
 ```
 
 #LICENSE

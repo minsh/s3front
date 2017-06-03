@@ -1,6 +1,6 @@
 {
   "name": "s3front",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Command-line tool to upload a directory to an AWS S3 bucket and optionally invalidate the associated AWS CloudFront distribution.",
   "main": "./bin/s3front",
   "scripts": {
@@ -24,14 +24,14 @@
   "license": "MIT",
   "dependencies": {
     "async": "0.1.22",
-    "aws-sdk": "^2.6.8",
+    "aws-sdk": "2.62.0",
     "cloudfront": "0.3.1",
     "commander": "1.1.1",
     "eyes": "0.1.8",
-    "fs-extra": "~0.6.0",
+    "fs-extra": "3.0.1",
     "node-uuid": "1.4.0",
     "progress": "^1.1.8",
-    "s3": "^4.4.0",
+    "s3": "github:andrewrk/node-s3-client#a1c25dd322bb22617a7255e84369b1e1c0289397",
     "underscore": "~1.4.4",
     "wrench": "1.4.4"
   }
