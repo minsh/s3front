@@ -2,20 +2,20 @@
 
 'use strict';
 
-var program = require('commander');
-var pkg = require('../package.json');
-var version = pkg.version;
-var s3 = require('s3');
-var AWS = require('aws-sdk');
-var wrench = require('wrench');
-var fs = require('fs-extra');
-var inspect = require('eyes').inspector({maxLength: -1});
-var ProgressBar = require('progress');
-var async = require('async');
-var cloudfront = require('cloudfront');
-var uuid = require('node-uuid');
-var _ = require('underscore');
-var cache = require('../lib/cache');
+const program = require('commander');
+const pkg = require('../package.json');
+const version = pkg.version;
+const s3 = require('s3');
+const AWS = require('aws-sdk');
+const wrench = require('wrench');
+const fs = require('fs-extra');
+const inspect = require('eyes').inspector({maxLength: -1});
+const ProgressBar = require('progress');
+const async = require('async');
+const cloudfront = require('cloudfront');
+const uuid = require('uuid');
+const _ = require('underscore');
+const cache = require('../lib/cache');
 
 /* CLI */
 
@@ -42,37 +42,34 @@ cache.init(program.bucket);
 program.region = program.region || 'us-east-1';
 
 /* use newest sdk to avoid: https://github.com/andrewrk/node-s3-client/issues/69 */
-var awsS3Client = new AWS.S3({
+const awsS3Client = new AWS.S3({
   accessKeyId: program.key,
   secretAccessKey: program.secret,
   region: program.region,
   signatureVersion: program.region === 'us-east-1' ? 'v2' : 'v4'
 });
 
-var s3Client = s3.createClient({s3Client: awsS3Client});
+const s3Client = s3.createClient({s3Client: awsS3Client});
 
-/* get all files and directory */
-var files = wrench.readdirSyncRecursive('.');
-/* remove directories */
-files = files.filter(function(f){ return !fs.statSync(f).isDirectory(); });
-var nbFiles = files.length;
+/* get all all relative file paths (omit directories) */
+const files = wrench.readdirSyncRecursive('.').filter(f => !fs.statSync(f).isDirectory());
 
-var quiet = (program.quiet) ? true : false;
+const quiet = (program.quiet) ? true : false;
 
 /* setup progress bar */
-var bar = new ProgressBar('  uploading [:bar] :percent :etas', {complete: '=', incomplete: ' ', width: 40, total: nbFiles});
+const bar = new ProgressBar('  uploading [:bar] :percent :etas', {complete: '=', incomplete: ' ', width: 40, total: files.length});
 
 /* upload files by batch */
-var batchSize = 10;
+const batchSize = 10;
 
-var q = async.queue(function(file, cb) {
-  cache.is(file, function(there) {
+const q = async.queue((file, cb) => {
+  cache.is(file, there => {
     if (there) { 
       if (!quiet) { bar.tick(); }
       return cb(); 
     }
 
-    var params = {
+    const params = {
       localFile: file,
       s3Params: {
         Bucket: program.bucket,
@@ -82,10 +79,10 @@ var q = async.queue(function(file, cb) {
     };
     if (program.cachecontrol) { params.s3Params['CacheControl'] = program.cachecontrol; }
 
-    var uploader = s3Client.uploadFile(params);
+    const uploader = s3Client.uploadFile(params);
 
     uploader.on('error', cb);
-    uploader.on('end', function() {
+    uploader.on('end', () => {
       cache.uploaded(file);
       if (!quiet) { bar.tick(); }
 
@@ -94,15 +91,15 @@ var q = async.queue(function(file, cb) {
   });
 }, 10 /* concurrency */);
 
-q.drain = function() {
+q.drain = () => {
   /* cloudfront invalidation */
   if (program.invalidate){
-    var cf = cloudfront.createClient(program.key, program.secret);
-    cf.listDistributions(function(err, list, info) {
-      var distributionId = null;
+    const cf = cloudfront.createClient(program.key, program.secret);
+    cf.listDistributions((err, list, info) => {
+      let distributionId = null;
       /* find first distribution id which has an alias similar to bucket name. */
-      list.some(function(d){
-        return d.config.aliases.some(function(a){
+      list.some(d => {
+        return d.config.aliases.some(a => {
           if (a === program.bucket) {
             distributionId = d.id;
             return true;
@@ -111,7 +108,7 @@ q.drain = function() {
       });
       /* invalidate content if distribution has been found */
       if (distributionId) {
-        cf.createInvalidation(distributionId, uuid.v4(), '/.', function(err, invalidation){
+        cf.createInvalidation(distributionId, uuid.v4(), '/.', (err, invalidation) => {
           if (err) inspect(err)
           console.log('\n\n  invalidation status:',invalidation.status);
           process.exit();
@@ -123,8 +120,8 @@ q.drain = function() {
   }
 };
 
-files.forEach(function(file) {
-  q.push(file, function(err) {
+files.forEach(file => {
+  q.push(file, err => {
     if (err) {
       inspect(err);
       process.exit();
@@ -132,4 +129,6 @@ files.forEach(function(file) {
   });  
 });
 
-process.on('exit', function() { console.log('\n'); });
+process.on('exit', () => { 
+  console.log('\n'); 
+});
