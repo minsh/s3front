@@ -24,7 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "0.1.22",
-    "aws-sdk": "2.782.0",
+    "aws-sdk": "2.814.0",
     "cloudfront": "0.3.1",
     "commander": "1.1.1",
     "eyes": "0.1.8",
