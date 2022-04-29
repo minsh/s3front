@@ -23,7 +23,7 @@
   "author": "Jon Maim",
   "license": "MIT",
   "dependencies": {
-    "async": "0.1.22",
+    "async": "2.6.4",
     "aws-sdk": "2.782.0",
     "cloudfront": "0.3.1",
     "commander": "1.1.1",
