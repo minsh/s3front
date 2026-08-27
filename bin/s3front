@@ -21,8 +21,8 @@ const cache = require('../lib/cache');
 
 program
   .version(version)
-  .option('-k, --key <key>',                  'aws key access id')
-  .option('-s, --secret <secret>',            'aws secret access key')
+  .option('-k, --key [key]',                  'optional aws key access id (otherwise the default AWS credential chain is used)')
+  .option('-s, --secret [secret]',            'optional aws secret access key')
   .option('-b, --bucket <name>',              'bucket name')
   .option('-q, --quiet',                      'quiet mode')
   .option('-r, --region <name>',              'region if not in US standard')
@@ -31,23 +31,38 @@ program
   .parse(process.argv);
 
 /* ensure required parameters */
-if (!program.key) throw new Error('--key required');
-if (!program.secret) throw new Error('--secret required');
 if (!program.bucket) throw new Error('--bucket required');
+if ((program.key && !program.secret) || (!program.key && program.secret)) {
+  throw new Error('--key and --secret must be used together');
+}
+if (program.invalidate && (!program.key || !program.secret)) {
+  throw new Error('--invalidate requires --key and --secret');
+}
 
 console.log('\n');
 
 cache.init(program.bucket);
 
-program.region = program.region || 'us-east-1';
+program.region = program.region || process.env.AWS_REGION || 'us-east-1';
 
 /* use newest sdk to avoid: https://github.com/andrewrk/node-s3-client/issues/69 */
-const awsS3Client = new AWS.S3({
-  accessKeyId: program.key,
-  secretAccessKey: program.secret,
+const s3Config = {
   region: program.region,
   signatureVersion: program.region === 'us-east-1' ? 'v2' : 'v4'
-});
+};
+if (program.key && program.secret) {
+  s3Config.accessKeyId = program.key;
+  s3Config.secretAccessKey = program.secret;
+} else {
+  /* aws-sdk v2 only honors AWS_SHARED_CREDENTIALS_FILE when filename is passed
+     or AWS_SDK_LOAD_CONFIG is set. */
+  s3Config.credentials = new AWS.SharedIniFileCredentials({
+    profile: process.env.AWS_PROFILE,
+    filename: process.env.AWS_SHARED_CREDENTIALS_FILE
+  });
+}
+
+const awsS3Client = new AWS.S3(s3Config);
 
 const s3Client = s3.createClient({s3Client: awsS3Client});
 

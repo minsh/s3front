@@ -15,8 +15,8 @@ npm install s3front -g
 
     -h, --help                         output usage information
     -V, --version                      output the version number
-    -k, --key <key>                    aws key access id
-    -s, --secret <secret>              aws secret access key
+    -k, --key [key]                    optional aws key access id
+    -s, --secret [secret]              optional aws secret access key
     -b, --bucket <name>                bucket name
     -q, --quiet                        quiet mode
     -r, --region <name>                region if not in US standard
@@ -27,9 +27,11 @@ npm install s3front -g
  Example
 The content of `website_dir` will be uploaded to the S3 bucket named `website`.
 If the upload is successful and a distribution containing an alias `website` is found, the whole distribution will be invalidated.
+
+Keys can be passed with `-k`/`-s`, or omitted so the AWS SDK default credential chain is used (`AWS_PROFILE`, `AWS_SHARED_CREDENTIALS_FILE`, etc). `--invalidate` still requires `-k`/`-s`.
 ```
 cd website_dir;
-s3front -k xxx -s xxx -b website;
+s3front -b website -r eu-west-1;
 ```
 
 #LICENSE
