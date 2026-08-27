@@ -31,8 +31,8 @@ const cache = require('../lib/cache');
 
 program
   .version(version)
-  .option('-k, --key [key]',                  'aws key access id (omit to use AWS_PROFILE / the default credential chain)')
-  .option('-s, --secret [secret]',            'aws secret access key (omit to use AWS_PROFILE / the default credential chain)')
+  .option('-k, --key <key>',                  'aws key access id (omit these flags to use AWS_PROFILE / the default credential chain)')
+  .option('-s, --secret <secret>',            'aws secret access key (omit these flags to use AWS_PROFILE / the default credential chain)')
   .option('-b, --bucket <name>',              'bucket name')
   .option('-q, --quiet',                      'quiet mode')
   .option('-r, --region <name>',              'region if not in US standard (or AWS_REGION)')

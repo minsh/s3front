@@ -15,8 +15,8 @@ npm install s3front -g
 
     -h, --help                         output usage information
     -V, --version                      output the version number
-    -k, --key [key]                    aws key access id (omit to use AWS_PROFILE / the default credential chain)
-    -s, --secret [secret]              aws secret access key (omit to use AWS_PROFILE / the default credential chain)
+    -k, --key <key>                    aws key access id (omit these flags to use AWS_PROFILE / the default credential chain)
+    -s, --secret <secret>              aws secret access key (omit these flags to use AWS_PROFILE / the default credential chain)
     -b, --bucket <name>                bucket name
     -q, --quiet                        quiet mode
     -r, --region <name>                region if not in US standard (or AWS_REGION)
