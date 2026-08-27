@@ -2,6 +2,16 @@
 
 'use strict';
 
+/*
+ * Credentials: pass -k/-s, or omit them and use the AWS SDK default chain.
+ *
+ * When -k/-s are omitted, these env vars select the profile:
+ *   AWS_PROFILE                  named profile (e.g. web-deploy)
+ *   AWS_SHARED_CREDENTIALS_FILE  credentials file (e.g. ~/.aws/credentials.minsh)
+ *   AWS_SDK_LOAD_CONFIG          set to 1 so aws-sdk v2 honors AWS_SHARED_CREDENTIALS_FILE
+ *   AWS_REGION                   used if -r is omitted
+ */
+
 const program = require('commander');
 const pkg = require('../package.json');
 const version = pkg.version;
@@ -21,13 +31,22 @@ const cache = require('../lib/cache');
 
 program
   .version(version)
-  .option('-k, --key [key]',                  'optional aws key access id (otherwise the default AWS credential chain is used)')
-  .option('-s, --secret [secret]',            'optional aws secret access key')
+  .option('-k, --key [key]',                  'aws key access id (omit to use AWS_PROFILE / the default credential chain)')
+  .option('-s, --secret [secret]',            'aws secret access key (omit to use AWS_PROFILE / the default credential chain)')
   .option('-b, --bucket <name>',              'bucket name')
   .option('-q, --quiet',                      'quiet mode')
-  .option('-r, --region <name>',              'region if not in US standard')
+  .option('-r, --region <name>',              'region if not in US standard (or AWS_REGION)')
   .option('-c, --cachecontrol <stringvalue>', 'cache control aws putObject param')
   .option('-i, --invalidate',                 'after upload find first cloudfront distribution which has an alias similar to the bucket name and invalidates its content')
+  .on('--help', () => {
+    console.log('  Environment (used when -k/-s are omitted):');
+    console.log();
+    console.log('    AWS_PROFILE                   named profile (e.g. web-deploy)');
+    console.log('    AWS_SHARED_CREDENTIALS_FILE   credentials file path');
+    console.log('    AWS_SDK_LOAD_CONFIG           set to 1 so aws-sdk v2 honors AWS_SHARED_CREDENTIALS_FILE');
+    console.log('    AWS_REGION                    used if -r is omitted');
+    console.log();
+  })
   .parse(process.argv);
 
 /* ensure required parameters */
@@ -53,13 +72,6 @@ const s3Config = {
 if (program.key && program.secret) {
   s3Config.accessKeyId = program.key;
   s3Config.secretAccessKey = program.secret;
-} else {
-  /* aws-sdk v2 only honors AWS_SHARED_CREDENTIALS_FILE when filename is passed
-     or AWS_SDK_LOAD_CONFIG is set. */
-  s3Config.credentials = new AWS.SharedIniFileCredentials({
-    profile: process.env.AWS_PROFILE,
-    filename: process.env.AWS_SHARED_CREDENTIALS_FILE
-  });
 }
 
 const awsS3Client = new AWS.S3(s3Config);
